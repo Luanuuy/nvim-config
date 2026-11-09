@@ -1,0 +1,12 @@
+# 自动识别文本文件，并在 Git 仓库中统一使用 LF
+* text=auto
+
+# Neovim 配置及文档统一使用 LF
+*.lua       text eol=lf
+*.json      text eol=lf
+*.toml      text eol=lf
+*.md        text eol=lf
+
+# Git 配置文件
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
