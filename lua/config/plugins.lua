@@ -39,10 +39,15 @@ vim.pack.add({
     },
     {
         src = "https://github.com/stevearc/conform.nvim",
-        name = "conform.nvim"
+        name = "conform.nvim",
     },
     {
         src = "https://github.com/b0o/SchemaStore.nvim",
-        name = "SchemaStore.nvim"
-    }
+        name = "SchemaStore.nvim",
+    },
+    {
+        src = "https://github.com/nvim-mini/mini.icons",
+        name = "mini.icons",
+        version = "stable",
+    },
 })

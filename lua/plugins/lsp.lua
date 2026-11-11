@@ -2,83 +2,46 @@
 vim.lsp.config("lua_ls", {
     cmd = { "lua-language-server" },
     filetypes = { "lua" },
-
-    root_markers = {
-        ".luarc.json",
-        ".luarc.jsonc",
-        ".git",
-    },
+    root_markers = { { ".luarc.json", ".luarc.jsonc" }, ".git" },
 
     settings = {
         Lua = {
-            runtime = {
-                version = "LuaJIT",
-            },
-
+            runtime = { version = "LuaJIT" },
             workspace = {
-                library = {
-                    vim.env.VIMRUNTIME,
-                },
-                checkThirdParty = false,
+                -- library = { vim.env.VIMRUNTIME }, -- 轻量加载
+                library = vim.api.nvim_get_runtime_file("", true), -- 全量加载
+                checkThirdParty = false, -- 第三方库检测
             },
 
+            -- 声明合法的全局变量
             diagnostics = {
-                globals = { "vim" },
+                globals = { "vim", "Snacks", "MiniIcons" },
             },
-
-            telemetry = {
-                enable = false,
-            },
+            telemetry = { enable = false }, -- 关闭遥测
         },
     },
 })
 
-vim.lsp.enable("lua_ls")
-
 -- JSON / JSONC Language Server
-vim.lsp.config("json_ls", {
-    cmd = {
-        "vscode-json-language-server",
-        "--stdio",
-    },
-
-    filetypes = {
-        "json",
-        "jsonc",
-    },
-
-    root_markers = {
-        ".git",
-        "package.json",
-    },
+vim.lsp.config("jsonls", {
+    cmd = { "vscode-json-language-server", "--stdio" },
+    filetypes = { "json", "jsonc" },
+    root_markers = { ".git", "package.json" },
 
     settings = {
         json = {
-            validate = {
-                enable = true,
-            },
-
+            validate = { enable = true },
             schemas = require("schemastore").json.schemas(),
         },
     },
 })
 
-vim.lsp.enable("json_ls")
-
 -- YAML Language Server
+-- 用 SchemaStore 的 YAML 目录，并显式清空内置 schemaStore url
 vim.lsp.config("yamlls", {
-    cmd = {
-        "yaml-language-server",
-        "--stdio",
-    },
-
-    filetypes = {
-        "yaml",
-    },
-
-    root_markers = {
-        ".git",
-    },
+    cmd = { "yaml-language-server", "--stdio" },
+    filetypes = { "yaml" },
+    root_markers = { ".git" },
 
     settings = {
         yaml = {
@@ -87,26 +50,16 @@ vim.lsp.config("yamlls", {
             hover = true,
 
             -- 暂不启用 SchemaStore 自动关联
-            schemaStore = {
-                enable = false,
-            },
+            schemaStore = { enable = false, url = "" },
+            schemas = require("schemastore").yaml.schemas(),
         },
     },
 })
 
-vim.lsp.enable("yamlls")
-
 -- Python Language Server (Pyright)
 vim.lsp.config("pyright", {
-    cmd = {
-        "pyright-langserver",
-        "--stdio",
-    },
-
-    filetypes = {
-        "python",
-    },
-
+    cmd = { "pyright-langserver", "--stdio" },
+    filetypes = { "python" },
     root_markers = {
         "pyrightconfig.json",
         "pyproject.toml",
@@ -128,4 +81,4 @@ vim.lsp.config("pyright", {
     },
 })
 
-vim.lsp.enable("pyright")
+vim.lsp.enable({ "lua_ls", "jsonls", "yamlls", "pyright" })

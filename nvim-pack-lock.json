@@ -29,6 +29,11 @@
       "rev": "aadb6d817577d553bbef61e8b9073f1bf4b87e08",
       "src": "https://github.com/OXY2DEV/markview.nvim"
     },
+    "mini.icons": {
+      "rev": "e56797f90192d81f1fda02e662fc3e8e3d775027",
+      "src": "https://github.com/nvim-mini/mini.icons",
+      "version": "'stable'"
+    },
     "nvim-surround": {
       "rev": "8b47db616ef658b8fc27e61db2896aa2f40134de",
       "src": "https://github.com/kylechui/nvim-surround"

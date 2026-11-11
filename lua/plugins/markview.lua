@@ -1,6 +1,3 @@
--- markview.nvim
--- Neovim 0.12 + Catppuccin Mocha
-
 local markview = require("markview")
 
 -- ============================================
@@ -13,8 +10,8 @@ local function set_highlights()
 
     -- 六级标题
     local headings = {
-        { fg = p.mauve,    bg = p.surface0 },
-        { fg = p.blue,     bg = p.surface0 },
+        { fg = p.mauve, bg = p.surface0 },
+        { fg = p.blue, bg = p.surface0 },
         { fg = p.green },
         { fg = p.yellow },
         { fg = p.peach },
@@ -73,6 +70,7 @@ set_highlights()
 
 -- 切换主题时重新生成高亮
 vim.api.nvim_create_autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("UserMarkdownHighlights", { clear = true }),
     callback = function()
         vim.schedule(set_highlights)
     end,
@@ -87,15 +85,15 @@ markview.setup({
         enable = true,
         enable_hybrid_mode = true,
 
-        icon_provider = "internal",
+        icon_provider = "mini", -- 可选："mini" / "internal"
         map_gx = false,
 
         filetypes = { "markdown" },
         ignore_buftypes = { "nofile" },
 
         debounce = 150,
-        max_buf_lines = 1000,
-        draw_range = { 100, 100 },
+        max_buf_lines = 500,
+        draw_range = { vim.o.lines, vim.o.lines },
 
         modes = { "n", "no", "c", "i" },
         hybrid_modes = { "n", "i" },
@@ -226,7 +224,7 @@ markview.setup({
         -- GitHub Callout
         block_quotes = {
             enable = true,
-            wrap = true,
+            wrap = false,
 
             default = {
                 border = "▋",
@@ -280,13 +278,15 @@ markview.setup({
 -- ============================================
 
 vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("UserMarkdown", { clear = true }),
     pattern = "markdown",
     callback = function()
-        vim.opt_local.wrap = false
         vim.opt_local.expandtab = true
         vim.opt_local.shiftwidth = 2
         vim.opt_local.tabstop = 2
         vim.opt_local.conceallevel = 2
+        vim.opt_local.softtabstop = 2
+        vim.opt_local.wrap = false
     end,
 })
 
@@ -295,20 +295,22 @@ vim.api.nvim_create_autocmd("FileType", {
 -- ============================================
 
 local map = vim.keymap.set
+map("n", "<leader>mT", "<cmd>Markview<CR>", {
+    desc = "全局切换预览",
+})
 
 map("n", "<leader>mt", "<cmd>Markview toggle<cr>", {
-    desc = "Markdown: 切换预览",
+    desc = "切换当前 Buffer 预览",
 })
 
 map("n", "<leader>mh", "<cmd>Markview hybridToggle<cr>", {
-    desc = "Markdown: 切换 Hybrid",
+    desc = "切换 Hybrid",
 })
 
 map("n", "<leader>ms", "<cmd>Markview splitToggle<cr>", {
-    desc = "Markdown: 分屏预览",
+    desc = "分屏预览",
 })
 
 map("n", "<leader>ml", "<cmd>Markview linewiseToggle<cr>", {
-    desc = "Markdown: 切换行级 Hybrid",
+    desc = "切换行级 Hybrid",
 })
-

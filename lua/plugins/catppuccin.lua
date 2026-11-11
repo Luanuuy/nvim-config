@@ -8,7 +8,7 @@ require("catppuccin").setup({
     -- 浮动窗口效果
     float = {
         transparent = true,
-        solid = true,
+        solid = false,
     },
 
     -- 终端 ANSI 颜色
@@ -23,9 +23,7 @@ require("catppuccin").setup({
 
         -- 常用 Neovim 功能
         treesitter = true,
-        native_lsp = {
-            enabled = true,
-        },
+        native_lsp = { enabled = true },
     },
 })
 
