@@ -1,178 +1,98 @@
 # Neovim 配置
 
-面向 **Windows 11 + Windows Terminal + PowerShell 7** 的轻量化 Neovim 配置。使用 **Neovim 0.12** 原生 `vim.pack` 管理插件，直接使用内置 LSP API，不依赖 Lazy.nvim、Mason 或 nvim-lspconfig。
+使用 Neovim 0.12 原生 `vim.pack` 管理插件、内置 LSP API 配置语言服务的轻量编辑环境。包含文件搜索、代码补全、诊断、格式化、Git 集成与 Markdown 预览，不依赖 Lazy.nvim、Mason 或 nvim-lspconfig。
+
+主要使用环境为 Windows 11、Windows Terminal 和 PowerShell 7；同时提供 Linux 安装指引。Linux 的字体、剪贴板和外部工具需按发行版及桌面会话准备，不代表所有发行版均已完成运行验证。
+
+- 日常功能与快捷键：见本文下方。
+- 首次部署、依赖安装及验收：见[安装与环境维护指南](EXTERNAL_DEPENDENCIES.md#deployment)。
+- 备份、迁移、更新与故障回退：见[维护流程](EXTERNAL_DEPENDENCIES.md#maintenance)。
 
 ## 主要功能
 
-| 类别 | 组件 / 功能 |
-| --- | --- |
-| 主题 | Catppuccin Mocha，透明背景 |
-| Markdown | markview.nvim：标题、表格、代码块与 Callout 预览，支持插入模式与 Hybrid 编辑 |
-| Buffer 标签栏 | 原生 `tabline`：点击切换、修改标记与长列表省略，无额外插件 |
-| 图标 | mini.icons 与各插件自带图标，使用 Nerd Font |
-| 文件搜索与工具 | Snacks.nvim：Picker、Explorer、Dashboard、通知等 |
-| 编辑增强 | Flash、nvim-surround、which-key |
-| Git | Gitsigns、Snacks Git Picker |
-| 补全 | blink.cmp：LSP、Path、Snippets、Buffer；纯 Lua 模糊匹配、幽灵文本与签名帮助 |
-| 语法解析 | nvim-treesitter `main` 分支 |
-| LSP | LuaLS、JSON Language Server、YAML Language Server、Pyright |
-| 格式化 | Conform.nvim：StyLua、Prettier，可选 Ruff / Black 与 shfmt |
+| 类别           | 组件 / 功能                                                                  |
+| -------------- | ---------------------------------------------------------------------------- |
+| 主题           | Catppuccin Mocha，透明背景                                                   |
+| Markdown       | markview.nvim：标题、表格、代码块与 Callout 预览，支持插入模式与 Hybrid 编辑 |
+| Buffer 标签栏  | 原生 `tabline`：点击切换、修改标记与长列表省略，无额外插件                   |
+| 图标           | mini.icons 与各插件自带图标，使用 Nerd Font                                  |
+| 文件搜索与工具 | Snacks.nvim：Picker、Explorer、Dashboard、通知等                             |
+| 编辑增强       | Flash、nvim-surround、which-key                                              |
+| Git            | Gitsigns、Snacks Git Picker                                                  |
+| 补全           | blink.cmp：LSP、Path、Snippets、Buffer；纯 Lua 模糊匹配、幽灵文本与签名帮助  |
+| 语法解析       | nvim-treesitter `main` 分支                                                  |
+| LSP            | LuaLS、JSON Language Server、YAML Language Server、Pyright                   |
+| 格式化         | Conform.nvim：StyLua、Prettier，可选 Ruff / Black 与 shfmt                   |
 
-## 目录结构
+## 基础依赖
+
+| 范围           | 依赖                                                                                   |
+| -------------- | -------------------------------------------------------------------------------------- |
+| 启动与插件管理 | Neovim 0.12、Git                                                                       |
+| 文件与全文搜索 | ripgrep（`rg`）、fd（部分 Linux 发行版为 `fdfind`）                                    |
+| 图标与剪贴板   | Nerd Font 3.x，终端需选用该字体；Linux 按会话配置剪贴板工具                            |
+| 语言服务       | LuaLS、JSON Language Server、YAML Language Server、Pyright；npm 工具需要 Node.js / npm |
+| 格式化         | StyLua、Prettier；Python 可选 Ruff 或 Black，Shell 可选 shfmt                          |
+| 语法解析       | 对应语言的 Tree-sitter 解析器；安装或更新时需要 CLI 0.26.1+、C 编译器、`tar`、`curl`   |
+
+只需安装所用功能对应的工具。当前仅配置 Lua、JSON / JSONC、YAML、Python 的 LSP；JavaScript / TypeScript 等语言的解析器不提供 LSP 功能。blink.cmp 使用纯 Lua 模糊匹配，无须为补全安装 Rust。
+
+插件会由 `vim.pack.add()` 安装，首次安装需要确认。外部程序和解析器没有自动安装逻辑；安装命令、PATH 设置和检查方式统一见[详细依赖清单](EXTERNAL_DEPENDENCIES.md#dependencies)。
+
+## 开始使用
+
+1. 按[首次部署流程](EXTERNAL_DEPENDENCIES.md#deployment)准备环境并放置配置。
+2. 完成插件和所需解析器安装、字体选择后，重新启动 `nvim`。
+3. 打开项目文件，使用 `<Space>` 查看 which-key 菜单；搜索用 `<Space>ff` / `<Space>fg`，格式化用 `<Space>cf`。
+
+Lua、JSON / JSONC、YAML 保存时会自动格式化；其他已配置语言按下方策略手动格式化。工具缺失时，请参阅[检查与排错](EXTERNAL_DEPENDENCIES.md#verification)。
+
+## 配置结构
 
 ```text
 nvim/
-├── init.lua
+├── init.lua                  # 加载入口
 ├── lua/
-│   ├── config/
-│   │   ├── options.lua
-│   │   ├── diagnostics.lua
-│   │   ├── keymaps.lua
-│   │   ├── plugins.lua
-│   │   └── tabline.lua
-│   └── plugins/
-│       ├── blink.lua
-│       ├── catppuccin.lua
-│       ├── conform.lua
-│       ├── flash.lua
-│       ├── gitsigns.lua
-│       ├── lsp.lua
-│       ├── markview.lua
-│       ├── mini-icons.lua
-│       ├── snacks.lua
-│       ├── surround.lua
-│       ├── treesitter.lua
-│       └── which-key.lua
-├── nvim-pack-lock.json
-├── stylua.toml
-├── .prettierrc.json
-├── .gitattributes
-└── .gitignore
+│   ├── config/               # 基础选项、快捷键、诊断、插件列表与标签栏
+│   └── plugins/              # 各插件配置、LSP 与格式化策略
+├── nvim-pack-lock.json       # 插件修订锁文件
+├── stylua.toml               # 本仓库 Lua 格式规则
+├── .prettierrc.json          # 本仓库 Prettier 规则
+├── README.md                 # 功能与日常使用
+└── EXTERNAL_DEPENDENCIES.md   # 安装、验收、备份、恢复和更新
 ```
-
-## 环境要求
-
-### 基础工具
-
-- **Neovim 0.12**（该配置使用 `vim.pack` 和 Neovim 内置 LSP 配置 API）。
-- Git（插件克隆及版本管理）。
-- ripgrep (`rg`) 与 fd (`fd`)（Snacks Picker 文件搜索和全文搜索）。
-- Nerd Font 3.0.0 或更新版本，用于 mini.icons、Markdown 和界面图标；需在终端中选用对应字体。
-
-### LSP 与格式化工具
-
-| 命令 | 用途 | 安装来源示例 |
-| --- | --- | --- |
-| `lua-language-server` | Lua LSP | Lua Language Server |
-| `vscode-json-language-server` | JSON / JSONC LSP | npm 包 `vscode-langservers-extracted` |
-| `yaml-language-server` | YAML LSP | npm 包 `yaml-language-server` |
-| `pyright-langserver` | Python LSP | npm 包 `pyright` |
-| `stylua` | Lua 格式化 | StyLua |
-| `prettier` | JSON / JSONC / YAML / Markdown 格式化 | npm 包 `prettier` |
-| `ruff` | Python 手动格式化，优先使用（可选） | Ruff |
-| `black` | Ruff 不可用时的 Python 手动格式化工具（可选） | Black |
-| `shfmt` | Shell 手动格式化（可选） | shfmt |
-
-已经安装 Node.js/npm 的环境，可安装以下 npm 工具：
-
-```powershell
-npm install -g vscode-langservers-extracted yaml-language-server pyright prettier
-```
-
-Lua Language Server 和 StyLua 需要单独安装，并确保对应命令可以在 `PATH` 中找到。
-
-### Tree-sitter 解析器编译
-
-当前锁定的 nvim-treesitter 要求 `tree-sitter` CLI 0.26.1 或更新版本、`tar`、`curl` 和 C 编译器。CLI 应使用独立发布包或系统包管理器安装，遵循该插件不使用 npm 安装 CLI 的要求。当前 Windows 环境使用 **w64devkit GCC**。需要编译解析器时，请确保 `gcc` 在 `PATH` 中；`treesitter.lua` 只在适合的 Windows 环境下设置 `CC=gcc`，不会覆盖已经存在的 `CC`。
-
-在 PowerShell 中检查外部工具：
-
-```powershell
-$commands = @(
-    'nvim', 'git', 'rg', 'fd',
-    'lua-language-server',
-    'vscode-json-language-server',
-    'yaml-language-server',
-    'pyright-langserver',
-    'stylua', 'prettier', 'ruff', 'black', 'shfmt',
-    'tree-sitter', 'gcc', 'tar', 'curl'
-)
-
-foreach ($command in $commands) {
-    $found = Get-Command $command -ErrorAction SilentlyContinue
-    '{0,-30} {1}' -f $command, $(if ($found) { 'OK' } else { 'MISSING' })
-}
-```
-
-某些工具只在使用对应功能时才需要；例如 GCC 主要用于解析器的安装或更新。
-
-## 全新 Windows 环境恢复
-
-1. 安装 Neovim、Git 和所需外部工具，配置 `PATH`。
-2. 将这个仓库克隆或复制到 `$env:LOCALAPPDATA\nvim`，确保其中直接存在 `init.lua`（避免多嵌套一层 `nvim`）。例如：
-
-   ```powershell
-   git clone <你的仓库地址> "$env:LOCALAPPDATA\nvim"
-   ```
-
-   如果不使用远程仓库，也可以直接把备份中的配置目录复制到相同位置。
-3. 启动 Neovim。`vim.pack.add()` 会尝试安装缺失的插件；`nvim-pack-lock.json` 应与配置一起保留，以恢复相应修订。首次安装会弹出待安装插件确认框（vim.pack.add 的 confirm 默认 true）。
-4. 安装 Tree-sitter 解析器。在 Neovim 内执行：
-
-   ```vim
-   :lua require('nvim-treesitter').install({ 'bash', 'javascript', 'json', 'lua', 'python', 'regex', 'toml', 'typescript', 'tsx', 'yaml', 'markdown', 'markdown_inline' })
-   ```
-
-   安装异步进行，等待完成后再重启。解析器名称区分大小写，使用小写 `markdown` 和 `markdown_inline`。JSONC 使用 `json`，Shell 使用 `bash`，TSX 使用 `tsx`。
-
-5. 安装完成后重新启动 Neovim，依次检查：
-
-   ```vim
-   :checkhealth vim.pack
-   :checkhealth nvim-treesitter
-   :checkhealth vim.lsp
-   :checkhealth blink.cmp
-   :checkhealth conform
-   :checkhealth snacks
-   :checkhealth markview
-   :checkhealth which-key
-   ```
-
-6. 打开 Lua、Python、JSON、YAML、Markdown 文件，验证 LSP、补全、格式化和 Markdown 预览。`Snacks.image` 与 `lazygit` 的可选依赖提示不代表当前启用功能异常。
-
-> 注意：Git 仓库包含配置和插件锁文件，**不包含** `nvim-data` 中已安装的插件、编译后的解析器、系统字体及外部 LSP/格式化程序。它们需要在目标设备上重新安装。
 
 ## 常用快捷键
 
 Leader 键为 `<Space>`。
 
-| 快捷键 | 功能 |
-| --- | --- |
-| `<Space>e` | Snacks 文件浏览器 |
-| `<Space>fe` | 在文件浏览器中定位当前文件 |
-| `<Space>ff` / `<Space>fg` | 查找文件 / 全文搜索 |
-| `<Space>fb` / `<Space>fr` | 查找 Buffer / 最近文件 |
-| `<Space>fc` | 编辑 `init.lua` |
-| `<Space>cf` | 手动格式化当前 Buffer |
-| `<Space>cd` | 查看当前行诊断 |
-| `gd` | 转到定义（LSP 附加时） |
-| `grn` / `gra` | 原生 LSP 重命名 / Code Action |
-| `<Space>mt` / `<Space>mT` | 切换当前 Buffer / 全局 Markdown 预览 |
-| `<Space>mh` / `<Space>ml` | 切换 Hybrid / 行级 Hybrid |
-| `<Space>ms` | 切换 Markdown 分屏预览 |
-| `<Space>gs` / `<Space>gl` / `<Space>gd` | Git 状态 / 日志 / 差异 |
-| `<Space>ws` | 保存文件 |
-| `<Space>wv` / `<Space>wh` | 垂直 / 水平分屏 |
-| `<Space>bd` | 关闭 Buffer |
-| `<Tab>` / `<S-Tab>` | 普通模式下切换到下一个 / 上一个 Buffer |
-| `s` / `S` | Flash 跳转 / Tree-sitter 选择（适用模式见配置） |
-| `]h` / `[h` | 下一个 / 上一个 Git 变更块 |
-| `<Space>ga` / `<Space>gr` | 暂存 / 撤销当前变更块；可视模式支持选区 |
-| `<Space>gS` / `<Space>gR` | 暂存 / 还原整个 Buffer |
-| `<Space>gp` / `<Space>gD` | 预览变更块 / 与 Git 索引对比 |
-| `<Space>gb` / `<Space>gB` | 当前行提交信息 / 切换行内 blame |
-| `<Space>us` / `<Space>ui` | 切换平滑滚动 / 缩进参考线 |
-| `<Space>un` / `<Space>ud` | 通知历史 / 开始页面 |
+| 快捷键                                  | 功能                                            |
+| --------------------------------------- | ----------------------------------------------- |
+| `<Space>e`                              | Snacks 文件浏览器                               |
+| `<Space>fe`                             | 在文件浏览器中定位当前文件                      |
+| `<Space>ff` / `<Space>fg`               | 查找文件 / 全文搜索                             |
+| `<Space>fb` / `<Space>fr`               | 查找 Buffer / 最近文件                          |
+| `<Space>fc`                             | 编辑 `init.lua`                                 |
+| `<Space>cf`                             | 手动格式化当前 Buffer                           |
+| `<Space>cd`                             | 查看当前行诊断                                  |
+| `gd`                                    | 转到定义（LSP 附加时）                          |
+| `grn` / `gra`                           | 原生 LSP 重命名 / Code Action                   |
+| `<Space>mt` / `<Space>mT`               | 切换当前 Buffer / 全局 Markdown 预览            |
+| `<Space>mh` / `<Space>ml`               | 切换 Hybrid / 行级 Hybrid                       |
+| `<Space>ms`                             | 切换 Markdown 分屏预览                          |
+| `<Space>gs` / `<Space>gl` / `<Space>gd` | Git 状态 / 日志 / 差异                          |
+| `<Space>ws`                             | 保存文件                                        |
+| `<Space>wv` / `<Space>wh`               | 垂直 / 水平分屏                                 |
+| `<Space>bd`                             | 关闭 Buffer                                     |
+| `<Tab>` / `<S-Tab>`                     | 普通模式下切换到下一个 / 上一个 Buffer          |
+| `s` / `S`                               | Flash 跳转 / Tree-sitter 选择（适用模式见配置） |
+| `]h` / `[h`                             | 下一个 / 上一个 Git 变更块                      |
+| `<Space>ga` / `<Space>gr`               | 暂存 / 撤销当前变更块；可视模式支持选区         |
+| `<Space>gS` / `<Space>gR`               | 暂存 / 还原整个 Buffer                          |
+| `<Space>gp` / `<Space>gD`               | 预览变更块 / 与 Git 索引对比                    |
+| `<Space>gb` / `<Space>gB`               | 当前行提交信息 / 切换行内 blame                 |
+| `<Space>us` / `<Space>ui`               | 切换平滑滚动 / 缩进参考线                       |
+| `<Space>un` / `<Space>ud`               | 通知历史 / 开始页面                             |
 
 完整快捷键可通过 which-key 菜单查看；Gitsigns 相关映射只在对应 Git Buffer 中启用。
 
@@ -196,78 +116,16 @@ Leader 键为 `<Space>`。
 - 手动格式化使用 `<Space>cf`。保存时格式化为同步操作，超时上限 3000ms；手动调用使用 Conform 默认超时。当前禁止 LSP 格式化兜底。
 - `.prettierrc.json`、`stylua.toml` 位于此仓库根目录，其他项目可以有自己的格式化规则。
 
-## 插件更新与恢复
+## 环境维护
 
-### 更新前
+安装与维护命令集中在 [EXTERNAL_DEPENDENCIES.md](EXTERNAL_DEPENDENCIES.md)，避免两份文档的步骤不一致：
 
-先检查工作区差异，再按需暂存并提交当前可用配置：
+- [Windows / Linux 首次部署](EXTERNAL_DEPENDENCIES.md#deployment)
+- [外部组件安装](EXTERNAL_DEPENDENCIES.md#dependencies)
+- [环境检查与排错](EXTERNAL_DEPENDENCIES.md#verification)
+- [配置与环境备份](EXTERNAL_DEPENDENCIES.md#backup)
+- [迁移与恢复](EXTERNAL_DEPENDENCIES.md#restore)
+- [配置、插件与外部工具更新](EXTERNAL_DEPENDENCIES.md#update)
+- [更新故障回退](EXTERNAL_DEPENDENCIES.md#rollback)
 
-```powershell
-git status --short
-git diff
-# 检查后按文件暂存，例如：git add -- README.md
-# 暂存完成后检查：git diff --cached
-git commit -m "chore: snapshot before plugin update"
-```
-
-如无变更，Git 会提示没有可提交的内容；无需重复提交。
-
-### 检查和更新插件
-
-在 Neovim 内使用原生 `vim.pack` 更新界面：
-
-```vim
-:lua vim.pack.update()
-```
-
-阅读更新列表并确认变更。插件更新后检查 `nvim-pack-lock.json` 的 Git 差异；若 `nvim-treesitter` 有更新，再执行：
-
-```vim
-:TSUpdate
-```
-
-随后重新启动 Neovim 并运行 `:checkhealth` 和常用功能测试。确认无误后，将更新的锁文件和必要的配置提交到 Git。
-
-### 恢复插件锁文件版本
-
-如果更新后发生故障，先恢复对应的 Git 版本（不要直接删除整个 `nvim-data`）。例如，仅撤销**尚未提交**的锁文件变更：
-
-```powershell
-git restore -- nvim-pack-lock.json
-```
-
-重启 Neovim 后执行：
-
-```vim
-:lua vim.pack.update(nil, { offline = true, target = "lockfile" })
-```
-
-检查并确认更新界面，使安装版本与锁文件一致。若问题由已提交的更新引起，应先从已知正常的 Git 提交恢复配置和锁文件，再执行上述同步步骤。Tree-sitter 插件与已编译解析器的版本也必须保持兼容。
-
-## 配置自检与换行符
-
-在配置目录的 PowerShell 中执行纯 Lua 语法检查；此命令不加载插件：
-
-```powershell
-nvim --headless -u NONE -i NONE -n "+lua for _,f in ipairs(vim.fn.glob('**/*.lua',false,true)) do local fn,e=loadfile(f); assert(fn,e) end; print('Lua syntax OK')" +qa
-```
-
-语法检查不代表 LSP、外部工具和交互功能已通过验收，仍需正常启动并执行前面的健康检查。
-
-仓库通过 `.gitattributes` 要求配置与文档使用 LF，StyLua、Prettier 也输出 LF。查看已跟踪文件的换行符：
-
-```powershell
-git ls-files --eol
-git ls-files --eol | Select-String 'w/(crlf|mixed)'
-```
-
-`i/lf` 表示索引为 LF，`w/lf` 表示工作区为 LF；`w/crlf` 表示工作区为 CRLF，`w/mixed` 表示混合换行。第二条命令没有输出，表示已跟踪文件中未检测到工作区 CRLF 或混合换行；未跟踪文件不在检查范围内。
-
-在 Neovim 中可用 `:setlocal fileformat?` 查看当前 Buffer 的换行格式：`unix` 为 LF，`dos` 为 CRLF。该选项不能完整判断原文件是否混合换行。
-
-## 备份说明
-
-- Git 版本控制适合跟踪配置变更、复现插件修订。
-- 额外保留独立的完整配置目录备份，用于误删或本地仓库损坏时恢复。
-- 需要跨机器复现时，应同时保留此 README 中的外部依赖和解析器安装步骤。
-- 不要把密钥、Token、`.env` 等私密文件提交到公开仓库。
+配置与 `nvim-pack-lock.json` 应一起保留；锁文件不包含外部工具、字体或已编译解析器。
